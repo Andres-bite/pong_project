@@ -6,102 +6,48 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 
-public class Board extends JComponent implements KeyListener {
-    private Dimension preferredSize;
-    private final Ellipse2D.Double ball;
-    private final Paddle paddle;
-    private final BallRunner ballRunner;
-    private final Font theFont = new Font("SansSerif", Font.BOLD, 24);
+public class Board extends JComponent {
+    private final GameModel model;
+    private final Font stateFont = new Font("SansSerif", Font.BOLD, 24);
 
-    public Board() {
+    public Board(GameModel model) {
+        this.model = model;
         setOpaque(true);
         setBorder(BorderFactory.createMatteBorder(5, 5, 5, 5, Color.BLACK));
-        ball = new Ellipse2D.Double(20, 320, 20, 20);
-        paddle = new Paddle();
-        ballRunner = new BallRunner(ball, paddle, this::repaint);
-        ballRunner.start();
+        setPreferredSize(new Dimension((int) GameModel.WIDTH, (int) GameModel.HEIGHT));
     }
 
     @Override
     protected void paintComponent(Graphics graphicsContext) {
         super.paintComponent(graphicsContext);
         Graphics2D graphics = (Graphics2D) graphicsContext;
-        if (isOpaque()) {
-            graphics.setColor(getBackground());
-            graphics.fillRect(0, 0, getWidth(), getHeight());
-            graphics.setColor(getForeground());
-        }
-
-        if (ballRunner.getState() == GameState.PAUSED) {
-            graphics.setFont(theFont);
-            graphics.setColor(Color.BLUE);
-            graphics.drawString("Paused", 20, 30);
-        }
+        Ball ball = model.getBall();
+        Paddle paddle = model.getPaddle();
 
         graphics.setStroke(new BasicStroke(5.0f));
         graphics.setColor(Color.RED);
-        graphics.fill(ball);
+        graphics.fill(new Ellipse2D.Double(ball.getX(), ball.getY(), Ball.DIAMETER, Ball.DIAMETER));
         graphics.setColor(Color.BLACK);
-        graphics.fill(paddle.getPaddle());
+        graphics.fill(new Rectangle2D.Double(paddle.getX(), paddle.getY(), Paddle.WIDTH, Paddle.HEIGHT));
+        drawState(graphics);
     }
 
-    @Override
-    public Dimension getPreferredSize() {
-        if (preferredSize == null) {
-            return new Dimension(640, 480);
+    private void drawState(Graphics2D graphics) {
+        String stateLabel = switch (model.getState()) {
+            case PAUSED -> "Paused";
+            case GAME_OVER -> "Game over";
+            default -> null;
+        };
+
+        if (stateLabel != null) {
+            graphics.setFont(stateFont);
+            graphics.setColor(Color.BLUE);
+            graphics.drawString(stateLabel, 20, 30);
         }
-        return super.getPreferredSize();
-    }
-
-    @Override
-    public void setPreferredSize(Dimension newPreferredSize) {
-        preferredSize = newPreferredSize;
-        super.setPreferredSize(newPreferredSize);
-    }
-
-    public void stop() {
-        ballRunner.stop();
-    }
-
-    @Override
-    public void keyTyped(KeyEvent event) {
-    }
-
-    @Override
-    public void keyPressed(KeyEvent event) {
-        switch (event.getKeyCode()) {
-            case KeyEvent.VK_LEFT:
-                if (ballRunner.getState() == GameState.RUNNING) {
-                    paddle.moveLeft();
-                    repaint();
-                }
-                break;
-            case KeyEvent.VK_RIGHT:
-                if (ballRunner.getState() == GameState.RUNNING) {
-                    paddle.moveRight();
-                    repaint();
-                }
-                break;
-            case KeyEvent.VK_SPACE:
-                ballRunner.pause();
-                repaint();
-                break;
-            case KeyEvent.VK_R:
-                ballRunner.resume();
-                repaint();
-                break;
-            default:
-                break;
-        }
-    }
-
-    @Override
-    public void keyReleased(KeyEvent event) {
     }
 }

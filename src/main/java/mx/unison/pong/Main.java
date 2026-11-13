@@ -14,22 +14,26 @@ public class Main {
 
     private static void createAndShowGui() {
         JFrame frame = new JFrame("Pong");
-        frame.setResizable(false);
-
+        GameModel model = new GameModel();
+        Board board = new Board(model);
+        GameLoop loop = new GameLoop(model, new GameEngine(), board::repaint);
+        GameInputController inputController = new GameInputController(model, loop, board::repaint);
         JPanel panel = new JPanel(new BorderLayout());
-        Board board = new Board();
-        panel.add(board, BorderLayout.CENTER);
 
-        frame.addKeyListener(board);
+        frame.setResizable(false);
+        panel.add(board, BorderLayout.CENTER);
+        inputController.install(board);
         frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent event) {
-                board.stop();
+                loop.stop();
             }
         });
         frame.setContentPane(panel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
+        frame.setLocationByPlatform(true);
         frame.setVisible(true);
+        loop.start();
     }
 }

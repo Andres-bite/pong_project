@@ -3,5 +3,6 @@ package mx.unison.pong;
 public enum GameState {
     RUNNING,
     PAUSED,
-    STOPPED
+    STOPPED,
+    GAME_OVER
 }
