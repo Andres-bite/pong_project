@@ -1,32 +1,35 @@
 package mx.unison.pong;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 public class Main {
     public static void main(String[] args) {
-
-        javax.swing.SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                createAndShowGUI();
-            }
-        });
-
+        SwingUtilities.invokeLater(Main::createAndShowGui);
     }
 
-    private static void createAndShowGUI() {
-        JFrame f = new JFrame("Pong");
+    private static void createAndShowGui() {
+        JFrame frame = new JFrame("Pong");
+        frame.setResizable(false);
 
-        f.setResizable(false);
-
-        JPanel p = new JPanel(new BorderLayout());
+        JPanel panel = new JPanel(new BorderLayout());
         Board board = new Board();
-        p.add(board, BorderLayout.CENTER);
+        panel.add(board, BorderLayout.CENTER);
 
-        f.addKeyListener( board );
-        f.setContentPane(p);
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.pack();
-        f.setVisible(true);
+        frame.addKeyListener(board);
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                board.stop();
+            }
+        });
+        frame.setContentPane(panel);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.pack();
+        frame.setVisible(true);
     }
 }

@@ -1,116 +1,107 @@
 package mx.unison.pong;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.geom.Ellipse2D;
+import javax.swing.BorderFactory;
+import javax.swing.JComponent;
 
-public class Board extends JComponent implements Runnable, KeyListener {
-    private Dimension preferredSize = null;
-    private Ellipse2D.Double ball;
-
-    private Paddle paddle;
-
-    private BallRunner ballRunner;
-    private boolean isPaused = false;
-
+public class Board extends JComponent implements KeyListener {
+    private Dimension preferredSize;
+    private final Ellipse2D.Double ball;
+    private final Paddle paddle;
+    private final BallRunner ballRunner;
     private final Font theFont = new Font("SansSerif", Font.BOLD, 24);
 
     public Board() {
         setOpaque(true);
-        setBorder(BorderFactory.createMatteBorder(5, 5,
-                5, 5, Color.BLACK));
-        ball = new Ellipse2D.Double(20,320,20,20);
-
+        setBorder(BorderFactory.createMatteBorder(5, 5, 5, 5, Color.BLACK));
+        ball = new Ellipse2D.Double(20, 320, 20, 20);
         paddle = new Paddle();
-        ballRunner = new BallRunner(ball,paddle);
-        Thread t1 = new Thread(ballRunner);
-        t1.start();
-        Thread t2 = new Thread( this);
-        t2.start();
+        ballRunner = new BallRunner(ball, paddle, this::repaint);
+        ballRunner.start();
     }
 
+    @Override
     protected void paintComponent(Graphics graphicsContext) {
         super.paintComponent(graphicsContext);
-        Graphics2D g = (Graphics2D) graphicsContext;
+        Graphics2D graphics = (Graphics2D) graphicsContext;
         if (isOpaque()) {
-            g.setColor( getBackground() );
-            g.fillRect(0, 0, getWidth(), getHeight());
-            g.setColor(getForeground());
+            graphics.setColor(getBackground());
+            graphics.fillRect(0, 0, getWidth(), getHeight());
+            graphics.setColor(getForeground());
         }
 
-        if( isPaused ) {
-            g.setFont(theFont);
-            g.setColor( Color.BLUE );
-            g.drawString("Paused", 20, 30);
+        if (ballRunner.getState() == GameState.PAUSED) {
+            graphics.setFont(theFont);
+            graphics.setColor(Color.BLUE);
+            graphics.drawString("Paused", 20, 30);
         }
 
-        g.setStroke(new BasicStroke(5.0f));
-
-        g.setColor(Color.RED);
-        g.fill(ball);
-        g.setColor(Color.BLACK);
-        g.fill(paddle.getPaddle());
+        graphics.setStroke(new BasicStroke(5.0f));
+        graphics.setColor(Color.RED);
+        graphics.fill(ball);
+        graphics.setColor(Color.BLACK);
+        graphics.fill(paddle.getPaddle());
     }
 
+    @Override
     public Dimension getPreferredSize() {
         if (preferredSize == null) {
             return new Dimension(640, 480);
-        } else {
-            return super.getPreferredSize();
         }
-    }
-
-    public void setPreferredSize(Dimension newPrefSize) {
-        preferredSize = newPrefSize;
-        super.setPreferredSize(newPrefSize);
+        return super.getPreferredSize();
     }
 
     @Override
-    public void run() {
-        while ( true ) {
-            repaint();
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
+    public void setPreferredSize(Dimension newPreferredSize) {
+        preferredSize = newPreferredSize;
+        super.setPreferredSize(newPreferredSize);
+    }
+
+    public void stop() {
+        ballRunner.stop();
     }
 
     @Override
-    public void keyTyped(KeyEvent e) {
-
+    public void keyTyped(KeyEvent event) {
     }
 
     @Override
-    public void keyPressed(KeyEvent e) {
-        switch ( e.getKeyCode() ) {
+    public void keyPressed(KeyEvent event) {
+        switch (event.getKeyCode()) {
             case KeyEvent.VK_LEFT:
-                if( !isPaused) {
+                if (ballRunner.getState() == GameState.RUNNING) {
                     paddle.moveLeft();
+                    repaint();
                 }
                 break;
             case KeyEvent.VK_RIGHT:
-                if( !isPaused) {
-                    paddle.moveRight();;
+                if (ballRunner.getState() == GameState.RUNNING) {
+                    paddle.moveRight();
+                    repaint();
                 }
                 break;
             case KeyEvent.VK_SPACE:
-                isPaused = true;
                 ballRunner.pause();
+                repaint();
                 break;
             case KeyEvent.VK_R:
-                isPaused = false;
                 ballRunner.resume();
+                repaint();
+                break;
+            default:
                 break;
         }
-       // System.out.println("K");
     }
 
     @Override
-    public void keyReleased(KeyEvent e) {
-
+    public void keyReleased(KeyEvent event) {
     }
 }
